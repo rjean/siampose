@@ -1,0 +1,23 @@
+batch_size: 512
+optimizer: sgd
+learning_rate: 0.03
+weight_decay: 0.0005
+lars_wrapper: False
+temperature: 0.1
+architecture: simsiam
+backbone: resnet18
+hidden_mlp: 512
+feat_dim: 2048
+patience: 10 #We don't want to early stop. The disantanglement gets better with time, even though we get perfect classification accuracy.
+max_epoch: 50
+exp_name: simsiam_96x96_next
+pairing: next
+gpus: 1
+num_workers: 16
+seed: None
+precision: 16 #16-bit is unstable!!!
+image_size: 96
+early_stop_metric: val_accuracy
+
+
+

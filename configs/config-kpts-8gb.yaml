@@ -1,0 +1,24 @@
+batch_size: 64
+optimizer: sgd
+learning_rate: 0.03
+weight_decay: 0.0005
+lars_wrapper: False
+temperature: 0.1
+architecture: kpts_regressor
+backbone: resnet50
+#hidden_mlp: 2048
+#feat_dim: 128
+#dropout: None
+input_height: 224
+tuple_length: 1
+frame_offset: 1
+tuple_offset: 1
+patience: 5
+max_epoch: 100
+exp_name: temp_kpts_regressor
+gpus: 1
+num_workers: 12
+seed: None
+precision: 16
+
+

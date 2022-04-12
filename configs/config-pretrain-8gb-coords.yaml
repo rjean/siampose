@@ -1,0 +1,36 @@
+batch_size: 48
+accumulate_grad_batches: 1 # For stock optimizer step
+#accumulate_grad_batches_custom: 8 # For custom optimizer step on SimSiam
+optimizer: sgd
+learning_rate: 0.0075
+weight_decay: 0.0005
+lars_wrapper: False
+temperature: 0.1
+architecture: simsiam
+backbone: resnet50
+hidden_mlp: 512
+feat_dim: 2048
+input_height: 224
+tuple_length: 2
+frame_offset: 1
+tuple_offset: 1
+patience: 10
+max_epoch: 100
+image_size: 224
+exp_name: pretrain_224_coordconv
+gpus: 1
+num_workers: 16
+seed: None
+precision: 16
+early_stop_metric: none
+shared_transform: False
+crop_scale_min: 0.2
+crop_scale_max: 1.0
+crop_ratio_min: 0.75
+crop_ratio_max: 1.33
+val_augmentation: False
+crop_strategy: bbox
+sync_hflip: True 
+coordconv: "first"
+jitter_strength: 0.5
+
