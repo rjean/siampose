@@ -36,22 +36,24 @@ def get_params_hash(*args, **kwargs):
 
 
 def get_obj_center_crop(
-        sample_frame: typing.Dict,
-        instance_idx: int,
-        crop_size: typing.Tuple[int, int],
+    sample_frame: typing.Dict,
+    instance_idx: int,
+    crop_size: typing.Tuple[int, int],
 ):
     assert sample_frame["INSTANCE_NUM"] > instance_idx
     assert crop_size[0] > 0 and crop_size[1] > 0
-    tl = (int(round(sample_frame["CENTROID_2D_IM"][instance_idx][0] - crop_size[0] / 2)),
-          int(round(sample_frame["CENTROID_2D_IM"][instance_idx][1] - crop_size[1] / 2)))
+    tl = (
+        int(round(sample_frame["CENTROID_2D_IM"][instance_idx][0] - crop_size[0] / 2)),
+        int(round(sample_frame["CENTROID_2D_IM"][instance_idx][1] - crop_size[1] / 2)),
+    )
     br = (tl[0] + crop_size[0], tl[1] + crop_size[1])
     return safe_crop(sample_frame["IMAGE"], tl, br, force_copy=True)
 
 
 def is_frame_blurry(
-        frame: np.ndarray,
-        nz_gradmag_threshold: float = 0.05,  # need at least 5% non-zero grad mag (default)
-        return_nz_grad_mag: bool = False,
+    frame: np.ndarray,
+    nz_gradmag_threshold: float = 0.05,  # need at least 5% non-zero grad mag (default)
+    return_nz_grad_mag: bool = False,
 ):
     grad_mags = np.abs(cv.Laplacian(frame, cv.CV_64F, dst=None)).max(axis=2).flatten()
     grad_mag_hist = np.histogram(grad_mags, bins=20, density=True)
@@ -63,7 +65,9 @@ def is_frame_blurry(
         return nonzero_grad_mag_sum < nz_gradmag_threshold
 
 
-def safe_crop(image, tl, br, bordertype=cv.BORDER_CONSTANT, borderval=0, force_copy=False):
+def safe_crop(
+    image, tl, br, bordertype=cv.BORDER_CONSTANT, borderval=0, force_copy=False
+):
     """Safely crops a region from within an image, padding borders if needed.
 
     Args:
@@ -89,19 +93,25 @@ def safe_crop(image, tl, br, bordertype=cv.BORDER_CONSTANT, borderval=0, force_c
     if not isinstance(tl, list) or not isinstance(br, list):
         raise AssertionError("expected tl/br coords to be provided as tuple or list")
     if tl[0] < 0 or tl[1] < 0 or br[0] > image.shape[1] or br[1] > image.shape[0]:
-        image = cv.copyMakeBorder(image, max(-tl[1], 0), max(br[1] - image.shape[0], 0),
-                                  max(-tl[0], 0), max(br[0] - image.shape[1], 0),
-                                  borderType=bordertype, value=borderval)
+        image = cv.copyMakeBorder(
+            image,
+            max(-tl[1], 0),
+            max(br[1] - image.shape[0], 0),
+            max(-tl[0], 0),
+            max(br[0] - image.shape[1], 0),
+            borderType=bordertype,
+            value=borderval,
+        )
         if tl[0] < 0:
             br[0] -= tl[0]
             tl[0] = 0
         if tl[1] < 0:
             br[1] -= tl[1]
             tl[1] = 0
-        return image[tl[1]:br[1], tl[0]:br[0], ...]
+        return image[tl[1] : br[1], tl[0] : br[0], ...]
     if force_copy:
-        return np.copy(image[tl[1]:br[1], tl[0]:br[0], ...])
-    return image[tl[1]:br[1], tl[0]:br[0], ...]
+        return np.copy(image[tl[1] : br[1], tl[0] : br[0], ...])
+    return image[tl[1] : br[1], tl[0] : br[0], ...]
 
 
 def get_label_color_mapping(idx):
@@ -127,6 +137,7 @@ class ConstantRandomOrderSampler(torch.utils.data.Sampler[int]):
     Args:
         data_source (Dataset): dataset to sample from
     """
+
     data_source: typing.Sized
 
     def __init__(self, data_source):

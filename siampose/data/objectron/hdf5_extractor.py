@@ -17,22 +17,39 @@ if __name__ == "__main__":
 
     # these fields will be encoded into datasets
     data_fields_to_export = [
-        "IMAGE", "IMAGE_ID", "TIMESTAMP_MCSEC", "POINT_2D", "POINT_3D", "VIEW_MATRIX",
+        "IMAGE",
+        "IMAGE_ID",
+        "TIMESTAMP_MCSEC",
+        "POINT_2D",
+        "POINT_3D",
+        "VIEW_MATRIX",
         # for some terrible reason the projection+intrinsic matrices change between frames???
-        "PROJECTION_MATRIX", "INTRINSIC_MATRIX", "EXTRINSIC_MATRIX", "OBJECT_TRANSLATION",
-        "OBJECT_ORIENTATION", "OBJECT_SCALE", "VISIBILITY", "PLANE_CENTER", "PLANE_NORMAL",
+        "PROJECTION_MATRIX",
+        "INTRINSIC_MATRIX",
+        "EXTRINSIC_MATRIX",
+        "OBJECT_TRANSLATION",
+        "OBJECT_ORIENTATION",
+        "OBJECT_SCALE",
+        "VISIBILITY",
+        "PLANE_CENTER",
+        "PLANE_NORMAL",
         # these two are non-standard:
-        "BBOX_2D_IM", "CENTROID_2D_IM"
+        "BBOX_2D_IM",
+        "CENTROID_2D_IM",
     ]
 
     # these fields will be encoded into group attributes
     attr_fields_to_export = [
-        "IMAGE_WIDTH", "IMAGE_HEIGHT", "ORIENTATION",
+        "IMAGE_WIDTH",
+        "IMAGE_HEIGHT",
+        "ORIENTATION",
     ]
 
     objectron_subset = "test"  # in ["train", "test"]
     target_subsampl_rate = 5  # jump and extract one out of every 5 frames
-    hdf5_output_path = data_path + f"extract_s{target_subsampl_rate}_raw_{objectron_subset}.hdf5.tmp"
+    hdf5_output_path = (
+        data_path + f"extract_s{target_subsampl_rate}_raw_{objectron_subset}.hdf5.tmp"
+    )
 
     with h5py.File(hdf5_output_path, "w") as fd:
         fd.attrs["target_subsampl_rate"] = target_subsampl_rate
@@ -43,9 +60,7 @@ if __name__ == "__main__":
 
         for object in ObjectronSequenceParser.all_objects:
             parser = ObjectronSequenceParser(
-                objectron_root=data_path,
-                subset=objectron_subset,
-                objects=[object]
+                objectron_root=data_path, subset=objectron_subset, objects=[object]
             )
             try:
 
@@ -55,14 +70,16 @@ if __name__ == "__main__":
                     if objectron_subset == "train":
                         if object == "bike" and seq_idx in [182]:
                             continue  # bug in encoding (parsing blocks and goes oom)
-                        if object == "book" and (seq_idx in [24, 584, 1500] or seq_idx >= 1531):
+                        if object == "book" and (
+                            seq_idx in [24, 584, 1500] or seq_idx >= 1531
+                        ):
                             continue  # bug in encoding (tfrecord readback goes boom)
                         if object == "bottle" and seq_idx in [666]:
                             continue  # bug in encoding (tfrecord readback goes boom)
                         if object == "chair" and seq_idx in [436, 1281, 1341]:
                             continue  # bug in encoding (tfrecord readback goes boom)
                     elif objectron_subset == "test":
-                        #if object == "bike" and seq_idx in [182]:
+                        # if object == "bike" and seq_idx in [182]:
                         #    continue  # bug in encoding (parsing blocks and goes oom)
                         pass
 
@@ -78,8 +95,10 @@ if __name__ == "__main__":
                         dataset_map = {}
                         captured_frame_idx = 0
                         for frame_idx, frame in enumerate(sample_seq):
-                            if last_frame_idx is not None and \
-                                    frame_idx - last_frame_idx < target_subsampl_rate:
+                            if (
+                                last_frame_idx is not None
+                                and frame_idx - last_frame_idx < target_subsampl_rate
+                            ):
                                 continue
 
                             # check whether we want to keep this frame or not based on blurriness
@@ -94,22 +113,31 @@ if __name__ == "__main__":
                                     non_blurry_grad_vals.append(latest_val)
                                     if len(non_blurry_grad_vals) > 10:
                                         non_blurry_grad_vals.pop(0)
-                                    curr_blur_threshold = min(max(np.mean(non_blurry_grad_vals) * 0.6, 0.05), 0.2)
-                                #cv.imshow("big crop", big_crop)
-                                #cv.waitKey(1)
+                                    curr_blur_threshold = min(
+                                        max(np.mean(non_blurry_grad_vals) * 0.6, 0.05),
+                                        0.2,
+                                    )
+                                # cv.imshow("big crop", big_crop)
+                                # cv.waitKey(1)
                                 if is_blurry:
                                     continue
 
                             # collapse to a single instance if many are available (drops data, but rare)
                             if frame["INSTANCE_NUM"] > 1:
                                 frame["POINT_NUM"] = frame["POINT_NUM"][0]
-                                assert frame["POINT_NUM"] == 9  # 9x 3D points per instance (should be const)
+                                assert (
+                                    frame["POINT_NUM"] == 9
+                                )  # 9x 3D points per instance (should be const)
                                 assert len(frame["POINT_2D"]) > 27
                                 frame["POINT_2D"] = frame["POINT_2D"][:27]
                                 assert len(frame["POINT_3D"]) > 27
                                 frame["POINT_3D"] = frame["POINT_3D"][:27]
-                                frame["OBJECT_TRANSLATION"] = frame["OBJECT_TRANSLATION"][:3]
-                                frame["OBJECT_ORIENTATION"] = frame["OBJECT_ORIENTATION"][:9]
+                                frame["OBJECT_TRANSLATION"] = frame[
+                                    "OBJECT_TRANSLATION"
+                                ][:3]
+                                frame["OBJECT_ORIENTATION"] = frame[
+                                    "OBJECT_ORIENTATION"
+                                ][:9]
                                 frame["OBJECT_SCALE"] = frame["OBJECT_SCALE"][:3]
                             frame["VISIBILITY"] = frame["VISIBILITY"][0]
                             frame["BBOX_2D_IM"] = frame["BBOX_2D_IM"][0]
@@ -120,8 +148,15 @@ if __name__ == "__main__":
                                 data = frame[field]
                                 if field == "IMAGE":
                                     retval, data = cv.imencode(
-                                        ".jpg", data, params=(cv.IMWRITE_JPEG_OPTIMIZE, 1,
-                                                              cv.IMWRITE_JPEG_QUALITY, 90))
+                                        ".jpg",
+                                        data,
+                                        params=(
+                                            cv.IMWRITE_JPEG_OPTIMIZE,
+                                            1,
+                                            cv.IMWRITE_JPEG_QUALITY,
+                                            90,
+                                        ),
+                                    )
                                     assert retval
                                     data = np.frombuffer(data, dtype=np.uint8)
                                     if not got_first_frame:
@@ -129,11 +164,13 @@ if __name__ == "__main__":
                                             name=seq_name + "/" + field,
                                             shape=(max_dataset_len,),
                                             maxshape=(max_dataset_len,),
-                                            dtype=h5py.special_dtype(vlen=np.uint8)
+                                            dtype=h5py.special_dtype(vlen=np.uint8),
                                         )
                                 else:
                                     if not got_first_frame:
-                                        if np.isscalar and not isinstance(data, np.ndarray):
+                                        if np.isscalar and not isinstance(
+                                            data, np.ndarray
+                                        ):
                                             data = np.asarray(data)
                                         dataset_map[field] = fd.create_dataset(
                                             name=seq_name + "/" + field,
@@ -151,7 +188,9 @@ if __name__ == "__main__":
                                 if not got_first_frame:
                                     fd[seq_name].attrs[field] = attr_val
                                 else:
-                                    assert np.array_equal(fd[seq_name].attrs[field], attr_val)
+                                    assert np.array_equal(
+                                        fd[seq_name].attrs[field], attr_val
+                                    )
 
                             got_first_frame = True
                             last_frame_idx = frame_idx
@@ -164,6 +203,8 @@ if __name__ == "__main__":
                         print(f"EXCEPTION CAUGHT FOR {seq_name}:\n{str(e)}")
                         continue
             except Exception as e:
-                print(f"EXCEPTION CAUGHT FOR {object} at seq_idx = {seq_idx}:\n{str(e)}")
+                print(
+                    f"EXCEPTION CAUGHT FOR {object} at seq_idx = {seq_idx}:\n{str(e)}"
+                )
                 continue
     print("all done")

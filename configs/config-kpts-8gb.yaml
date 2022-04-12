@@ -20,5 +20,3 @@ gpus: 1
 num_workers: 12
 seed: None
 precision: 16
-
-

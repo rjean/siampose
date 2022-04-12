@@ -18,5 +18,3 @@ precision: 32 #16-bit is unstable!!!
 image_size: 96
 pairing: next
 early_stop_metric: val_accuracy
-
-

@@ -16,22 +16,22 @@ def load_model(hyper_params, checkpoint=None):  # pragma: no cover
     Returns:
         model (obj): A neural network model object.
     """
-    architecture = hyper_params['architecture']
+    architecture = hyper_params["architecture"]
     # __TODO__ fix architecture list
-    if architecture == 'simsiam':
+    if architecture == "simsiam":
         model_class = siampose.models.simsiam.SimSiam
-    elif architecture == 'kpts_regressor':
+    elif architecture == "kpts_regressor":
         model_class = siampose.models.kpts_regressor.KeypointsRegressor
     else:
-        raise ValueError('architecture {} not supported'.format(architecture))
-    logger.info('selected architecture: {}'.format(architecture))
-    #if checkpoint is None:
+        raise ValueError("architecture {} not supported".format(architecture))
+    logger.info("selected architecture: {}".format(architecture))
+    # if checkpoint is None:
     model = model_class(hyper_params)
-    #else:
+    # else:
     #    model = model_class.load_from_checkpoint(checkpoint)
-    logger.info('model info:\n' + str(model) + '\n')
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    logger.info('using device {}'.format(device))
+    logger.info("model info:\n" + str(model) + "\n")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    logger.info("using device {}".format(device))
     if torch.cuda.is_available():
         logger.info(torch.cuda.get_device_name(0))
 

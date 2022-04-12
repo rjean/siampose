@@ -36,7 +36,12 @@ from detectron2.data import (
     build_detection_test_loader,
     build_detection_train_loader,
 )
-from detectron2.engine import default_argument_parser, default_setup, default_writers, launch
+from detectron2.engine import (
+    default_argument_parser,
+    default_setup,
+    default_writers,
+    launch,
+)
 from detectron2.evaluation import (
     CityscapesInstanceEvaluator,
     CityscapesSemSegEvaluator,
@@ -95,7 +100,9 @@ def get_evaluator(cfg, dataset_name, output_folder=None):
         return LVISEvaluator(dataset_name, cfg, True, output_folder)
     if len(evaluator_list) == 0:
         raise NotImplementedError(
-            "no Evaluator for the dataset {} with the type {}".format(dataset_name, evaluator_type)
+            "no Evaluator for the dataset {} with the type {}".format(
+                dataset_name, evaluator_type
+            )
         )
     if len(evaluator_list) == 1:
         return evaluator_list[0]
@@ -118,8 +125,9 @@ def do_test(cfg, model, output_dir):
         results = list(results.values())[0]
     return results
 
+
 def do_train(cfg, model, resume=False, output_dir="./output", backbone_weights=None):
-    
+
     model.train()
     optimizer = build_optimizer(cfg, model)
     scheduler = build_lr_scheduler(cfg, optimizer)
@@ -128,12 +136,14 @@ def do_train(cfg, model, resume=False, output_dir="./output", backbone_weights=N
         model, output_dir, optimizer=optimizer, scheduler=scheduler
     )
 
-
     start_iter = (
-        checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get("iteration", -1) + 1
+        checkpointer.resume_or_load(cfg.MODEL.WEIGHTS, resume=resume).get(
+            "iteration", -1
+        )
+        + 1
     )
     max_iter = cfg.SOLVER.MAX_ITER
-    ckpt_file= backbone_weights
+    ckpt_file = backbone_weights
     if ckpt_file is not None:
         print(f"Loading backbone weights from {ckpt_file}!")
         ckpt = torch.load(ckpt_file)
@@ -142,16 +152,13 @@ def do_train(cfg, model, resume=False, output_dir="./output", backbone_weights=N
         mapped = []
         for key in state_dict:
             if "online_network.encoder" in key and "num_batches_tracked" not in key:
-                new_key = key.replace("online_network.encoder.","")
+                new_key = key.replace("online_network.encoder.", "")
                 backbone_state_dict[new_key] = state_dict[key]
                 mapped.append(key)
-        
-        
+
         model.backbone.load_state_dict(backbone_state_dict)
         print("Succesfully mapped the following weights:")
         print(mapped)
-        
-        
 
     periodic_checkpointer = PeriodicCheckpointer(
         checkpointer, cfg.SOLVER.CHECKPOINT_PERIOD, max_iter=max_iter
@@ -172,7 +179,9 @@ def do_train(cfg, model, resume=False, output_dir="./output", backbone_weights=N
                 losses = sum(loss_dict.values())
             assert torch.isfinite(losses).all(), loss_dict
 
-            loss_dict_reduced = {k: v.item() for k, v in comm.reduce_dict(loss_dict).items()}
+            loss_dict_reduced = {
+                k: v.item() for k, v in comm.reduce_dict(loss_dict).items()
+            }
             losses_reduced = sum(loss for loss in loss_dict_reduced.values())
             if comm.is_main_process():
                 storage.put_scalars(total_loss=losses_reduced, **loss_dict_reduced)
@@ -180,7 +189,9 @@ def do_train(cfg, model, resume=False, output_dir="./output", backbone_weights=N
             optimizer.zero_grad()
             losses.backward()
             optimizer.step()
-            storage.put_scalar("lr", optimizer.param_groups[0]["lr"], smoothing_hint=False)
+            storage.put_scalar(
+                "lr", optimizer.param_groups[0]["lr"], smoothing_hint=False
+            )
             scheduler.step()
 
             if (
@@ -231,14 +242,29 @@ def main(args):
             model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
         )
 
-    do_train(cfg, model, resume=args.resume, output_dir=args.output_dir, backbone_weights=args.backbone_weights)
+    do_train(
+        cfg,
+        model,
+        resume=args.resume,
+        output_dir=args.output_dir,
+        backbone_weights=args.backbone_weights,
+    )
     return do_test(cfg, model, args.output_dir)
 
 
 if __name__ == "__main__":
     parser = default_argument_parser()
-    parser.add_argument("--backbone-weights", type=str,help="Reload weights for the backbone from a PyTorch-Lightning checkpoint", default=None)    
-    parser.add_argument("--output-dir", default="output/", help="Directory were to load/save checkpoints")
+    parser.add_argument(
+        "--backbone-weights",
+        type=str,
+        help="Reload weights for the backbone from a PyTorch-Lightning checkpoint",
+        default=None,
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="output/",
+        help="Directory were to load/save checkpoints",
+    )
     args = parser.parse_args()
     print("Command Line Args:", args)
     launch(

@@ -19,7 +19,7 @@ For the HDF5 dataloader expects a pre-processed HDF5 file, which contains the fu
 TODO: Add HDF5 generation notebook.
 
 ### File-based preprocessing
-For the file-based dataloader, bounding box crops are taken for each object instance in the Objectron raw video sequences. The "raw" objectron annotations are used directly, without further processing. This dataloader allow reducing the orignal 2Tb dataset to a more tractable 2Gb dataset for quick experiment cycles. 
+For the file-based dataloader, bounding box crops are taken for each object instance in the Objectron raw video sequences. The "raw" objectron annotations are used directly, without further processing. This dataloader allow reducing the orignal 2Tb dataset to a more tractable 2Gb dataset for quick experiment cycles.
 
 ## UCF-101 Data
 TODO: Add UCF-101 notebooks.
@@ -28,7 +28,7 @@ TODO: Add UCF-101 notebooks.
 
 ## Pre-training a model.
 Assuming you have the prepared HDF5 data in the /home/raphael/datasets/objectron folder, you can start pre-training with the following command:
-``` 
+```
 python siampose/main.py --data=~/datasets/objectron --output=output --config=configsconfig-pretrain-8gb.yaml
 ```
 During pre-training, the accuracy on category prediction is used as a proxy for the model quality.
@@ -52,4 +52,3 @@ python siampose/zero_shot_pose.py output/pretrain_224 --subset_size=5000 --cpu
 
 ## Qualitative evaluation notebooks.
 The qualitative evaluation notebooks can be found in the "notebooks" folder.
-

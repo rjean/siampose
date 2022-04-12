@@ -18,9 +18,9 @@ from selfsupmotion.data.utils import *
 
 
 def extract_crop_data(
-        data_path: typing.AnyStr,
-        max_obj_count: int = 50,
-        crop_count: int = 10,
+    data_path: typing.AnyStr,
+    max_obj_count: int = 50,
+    crop_count: int = 10,
 ) -> typing.Dict:
     output_data = {}
     for object in ["camera", "chair", "cup", "shoe"]:
@@ -30,7 +30,7 @@ def extract_crop_data(
                 break
             sample_seq = ObjectronFrameParser(seq_context, seq_data)
             frame_count = len(sample_seq)
-            frame_iter_offset = max(frame_count / crop_count, 1.)
+            frame_iter_offset = max(frame_count / crop_count, 1.0)
             next_frame_idx_to_extract = 0
             seq_name = f"{object}{seq_idx:05d}"
             output_data[seq_name] = {}
@@ -48,10 +48,10 @@ def extract_crop_data(
 
 
 def compute_resnet_embedding_without_fc(
-        tensor: torch.Tensor,
-        resnet: torch.nn.Module,
-        apply_avg_pool: bool = True,
-        apply_flatten: bool = True,
+    tensor: torch.Tensor,
+    resnet: torch.nn.Module,
+    apply_avg_pool: bool = True,
+    apply_flatten: bool = True,
 ) -> torch.Tensor:
     x = resnet.conv1(tensor)
     x = resnet.bn1(x)
@@ -69,7 +69,7 @@ def compute_resnet_embedding_without_fc(
 
 
 def extract_embeddings(
-        data_path: typing.AnyStr,
+    data_path: typing.AnyStr,
 ) -> typing.Dict:
     embeddings_backup_path = data_path + "embeddings.pkl"
     if not os.path.isfile(embeddings_backup_path):
@@ -82,11 +82,14 @@ def extract_embeddings(
             with open(crops_backup_path, "rb") as fd:
                 data = pickle.load(fd)
         resnet50_imnet = torchvision.models.resnet50(pretrained=True).eval()
-        imnet_transforms = torchvision.transforms.Compose([
-            torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(
-                mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        imnet_transforms = torchvision.transforms.Compose(
+            [
+                torchvision.transforms.ToTensor(),
+                torchvision.transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
         with torch.no_grad():
             for seq_name, seq_data in data.items():
                 for frame_idx, frame_data in seq_data.items():
@@ -95,7 +98,10 @@ def extract_embeddings(
                     logits = torch.squeeze(resnet50_imnet(tensor), 0).numpy()
                     embed = compute_resnet_embedding_without_fc(tensor, resnet50_imnet)
                     embed = torch.squeeze(embed, 0).numpy()
-                    frame_data["imnet_logits"], frame_data["imnet_embed"] = logits, embed
+                    frame_data["imnet_logits"], frame_data["imnet_embed"] = (
+                        logits,
+                        embed,
+                    )
         with open(embeddings_backup_path, "wb") as fd:
             pickle.dump(data, fd)
     else:
@@ -105,11 +111,11 @@ def extract_embeddings(
 
 
 def plot_clusters(
-        data: typing.Dict,
-        use_logits: bool = False,
-        use_plt: bool = True,
-        plot_pts_count: typing.Optional[int] = 40,
-        use_umap: bool = False,
+    data: typing.Dict,
+    use_logits: bool = False,
+    use_plt: bool = True,
+    plot_pts_count: typing.Optional[int] = 40,
+    use_umap: bool = False,
 ):
     points, meta, crops = [], [], []
     pts_key = "imnet_logits" if use_logits else "imnet_embed"
@@ -130,14 +136,20 @@ def plot_clusters(
     proj_pts = reducer.fit_transform(np.asarray(points))
     if plot_pts_count is not None:
         assert plot_pts_count <= len(instance_names)
-        instance_idxs_subset = np.random.permutation(len(instance_names))[:plot_pts_count]
+        instance_idxs_subset = np.random.permutation(len(instance_names))[
+            :plot_pts_count
+        ]
         subset_mask = np.isin(instance_idxs, instance_idxs_subset)
         proj_pts = proj_pts[subset_mask]
         meta = np.asarray(meta)[subset_mask]
         crops = torch.from_numpy(crops.numpy()[subset_mask])
         class_idxs = class_idxs[subset_mask]
     if use_plt:
-        plt.scatter(proj_pts[:, 0], proj_pts[:, 1], c=[get_label_color_mapping(x ) /255 for x in class_idxs])
+        plt.scatter(
+            proj_pts[:, 0],
+            proj_pts[:, 1],
+            c=[get_label_color_mapping(x) / 255 for x in class_idxs],
+        )
         plt.gca().set_aspect("equal", "datalim")
         plt.title(f"{'UMAP' if use_umap else 'TSNE'}-{pts_key}")
         plt.show()

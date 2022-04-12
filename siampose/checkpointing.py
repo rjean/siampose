@@ -144,8 +144,9 @@ class ModelCheckpointLastOnly(Callback):
 
         if prefix:
             rank_zero_warn(
-                'Argument `prefix` is deprecated in v1.1 and will be removed in v1.3.'
-                ' Please prepend your prefix in `filename` instead.', DeprecationWarning
+                "Argument `prefix` is deprecated in v1.1 and will be removed in v1.3."
+                " Please prepend your prefix in `filename` instead.",
+                DeprecationWarning,
             )
 
         self.__init_monitor_mode(monitor, mode)
@@ -171,7 +172,7 @@ class ModelCheckpointLastOnly(Callback):
             "best_model_score": self.best_model_score,
             "best_model_path": self.best_model_path,
             "current_score": self.current_score,
-            "dirpath": self.dirpath
+            "dirpath": self.dirpath,
         }
 
     def on_load_checkpoint(self, checkpointed_state: Dict[str, Any]):
@@ -187,14 +188,14 @@ class ModelCheckpointLastOnly(Callback):
         epoch = trainer.current_epoch
         global_step = trainer.global_step
 
-        #if (
+        # if (
         #    trainer.fast_dev_run  # disable checkpointing with fast_dev_run
         #    or self.save_top_k == 0  # no models are saved
         #    or self.period < 1  # no models are saved
         #    or (epoch + 1) % self.period  # skip epoch
         #    or trainer.running_sanity_check  # don't save anything during sanity check
         #    or self._last_global_step_saved == global_step  # already saved at the last step
-        #):
+        # ):
         #    return
 
         self._add_backward_monitor_support(trainer)
@@ -209,7 +210,7 @@ class ModelCheckpointLastOnly(Callback):
         # callback supports multiple simultaneous modes
         # here we call each mode sequentially
         # Mode 1: save all checkpoints OR only the top k
-        #if self.save_top_k:
+        # if self.save_top_k:
         #    self._save_top_k_checkpoints(trainer, pl_module, monitor_candidates)
 
         # Mode 2: save the last checkpoint
@@ -218,33 +219,34 @@ class ModelCheckpointLastOnly(Callback):
     def __validate_init_configuration(self):
         if self.save_top_k is not None and self.save_top_k < -1:
             raise MisconfigurationException(
-                f'Invalid value for save_top_k={self.save_top_k}. Must be None or >= -1'
+                f"Invalid value for save_top_k={self.save_top_k}. Must be None or >= -1"
             )
         if self.monitor is None:
             # None: save last epoch, -1: save all epochs, 0: nothing is saved
             if self.save_top_k not in [None, -1, 0]:
                 raise MisconfigurationException(
-                    f'ModelCheckpoint(save_top_k={self.save_top_k}, monitor=None) is not a valid'
-                    ' configuration. No quantity for top_k to track.'
+                    f"ModelCheckpoint(save_top_k={self.save_top_k}, monitor=None) is not a valid"
+                    " configuration. No quantity for top_k to track."
                 )
             if self.save_last:
                 rank_zero_warn(
-                    'ModelCheckpoint(save_last=True, monitor=None) is a redundant configuration.'
-                    ' You can save the last checkpoint with ModelCheckpoint(save_top_k=None, monitor=None).'
+                    "ModelCheckpoint(save_last=True, monitor=None) is a redundant configuration."
+                    " You can save the last checkpoint with ModelCheckpoint(save_top_k=None, monitor=None)."
                 )
 
     def __init_ckpt_dir(self, filepath, dirpath, filename, save_top_k):
         if filepath:
-            if (dirpath or filename):
+            if dirpath or filename:
                 raise MisconfigurationException(
-                    'You have set all three path/name inputs which are not feasible.'
-                    f' You have to choose either filepath={filepath} OR dirpath={dirpath}'
-                    f' and filename={filename} configuration.'
+                    "You have set all three path/name inputs which are not feasible."
+                    f" You have to choose either filepath={filepath} OR dirpath={dirpath}"
+                    f" and filename={filename} configuration."
                 )
 
             rank_zero_warn(
-                'Argument `filepath` is deprecated in v1.0 and will be removed in v1.2.'
-                ' Please use `dirpath` and `filename` instead.', DeprecationWarning
+                "Argument `filepath` is deprecated in v1.0 and will be removed in v1.2."
+                " Please use `dirpath` and `filename` instead.",
+                DeprecationWarning,
             )
 
             _fs = get_filesystem(filepath)
@@ -252,11 +254,11 @@ class ModelCheckpointLastOnly(Callback):
             if _fs.isdir(filepath):
                 dirpath, filename = filepath, None
             else:
-                if _fs.protocol == 'file':
+                if _fs.protocol == "file":
                     filepath = os.path.realpath(filepath)
                 dirpath, filename = os.path.split(filepath)
 
-        self._fs = get_filesystem(str(dirpath) if dirpath else '')
+        self._fs = get_filesystem(str(dirpath) if dirpath else "")
 
         if (
             save_top_k is not None
@@ -265,11 +267,9 @@ class ModelCheckpointLastOnly(Callback):
             and self._fs.isdir(dirpath)
             and len(self._fs.ls(dirpath)) > 0
         ):
-            rank_zero_warn(
-                f"Checkpoint directory {dirpath} exists and is not empty."
-            )
+            rank_zero_warn(f"Checkpoint directory {dirpath} exists and is not empty.")
 
-        if dirpath and self._fs.protocol == 'file':
+        if dirpath and self._fs.protocol == "file":
             dirpath = os.path.realpath(dirpath)
 
         self.dirpath: Union[str, None] = dirpath or None
@@ -283,23 +283,24 @@ class ModelCheckpointLastOnly(Callback):
         }
 
         # TODO: Update with MisconfigurationException when auto mode is removed in v1.3
-        if mode not in mode_dict and mode != 'auto':
+        if mode not in mode_dict and mode != "auto":
             rank_zero_warn(
                 f"ModelCheckpoint mode {mode} is unknown, fallback to auto mode",
                 RuntimeWarning,
             )
             mode = "auto"
 
-        if mode == 'auto':
+        if mode == "auto":
             rank_zero_warn(
                 "mode='auto' is deprecated in v1.1 and will be removed in v1.3."
                 " Default value for mode with be 'min' in v1.3.",
-                DeprecationWarning
+                DeprecationWarning,
             )
 
-            mode_dict['auto'] = (
+            mode_dict["auto"] = (
                 (-torch_inf, "max")
-                if monitor is not None and ("acc" in monitor or monitor.startswith("fmeasure"))
+                if monitor is not None
+                and ("acc" in monitor or monitor.startswith("fmeasure"))
                 else (torch_inf, "min")
             )
 
@@ -363,7 +364,7 @@ class ModelCheckpointLastOnly(Callback):
         # check and parse user passed keys in the string
         groups = re.findall(r"(\{.*?)[:\}]", filename)
         if len(groups) >= 0:
-            metrics.update({"epoch": epoch, 'step': step})
+            metrics.update({"epoch": epoch, "step": step})
             for group in groups:
                 name = group[1:]
                 filename = filename.replace(group, name + "={" + name)
@@ -435,11 +436,11 @@ class ModelCheckpointLastOnly(Callback):
                 else f"version_{trainer.logger.version}"
             )
 
-            version, name = trainer.accelerator_backend.broadcast((version, trainer.logger.name))
-
-            ckpt_path = os.path.join(
-                save_dir, str(name), version, "checkpoints"
+            version, name = trainer.accelerator_backend.broadcast(
+                (version, trainer.logger.name)
             )
+
+            ckpt_path = os.path.join(save_dir, str(name), version, "checkpoints")
         else:
             ckpt_path = os.path.join(trainer.weights_save_path, "checkpoints")
 
@@ -452,11 +453,11 @@ class ModelCheckpointLastOnly(Callback):
         metrics = trainer.logger_connector.callback_metrics
 
         # backward compatibility... need to deprecate
-        if self.monitor is None and 'val_loss' in metrics:
-            self.monitor = 'val_loss'
+        if self.monitor is None and "val_loss" in metrics:
+            self.monitor = "val_loss"
 
-        if self.monitor is None and 'checkpoint_on' in metrics:
-            self.monitor = 'checkpoint_on'
+        if self.monitor is None and "checkpoint_on" in metrics:
+            self.monitor = "checkpoint_on"
 
         if self.save_top_k is None and self.monitor is not None:
             self.save_top_k = 1
@@ -485,7 +486,9 @@ class ModelCheckpointLastOnly(Callback):
 
         version_cnt = 0
         while self.file_exists(filepath, trainer) and filepath != del_filepath:
-            filepath = self.format_checkpoint_name(epoch, step, ckpt_name_metrics, ver=version_cnt)
+            filepath = self.format_checkpoint_name(
+                epoch, step, ckpt_name_metrics, ver=version_cnt
+            )
             version_cnt += 1
 
         return filepath
@@ -494,12 +497,14 @@ class ModelCheckpointLastOnly(Callback):
         ckpt_name_metrics = deepcopy(trainer.logger_connector.logged_metrics)
         ckpt_name_metrics.update(trainer.logger_connector.callback_metrics)
         ckpt_name_metrics.update(trainer.logger_connector.progress_bar_metrics)
-        ckpt_name_metrics.update({"step": trainer.global_step, "epoch": trainer.current_epoch})
+        ckpt_name_metrics.update(
+            {"step": trainer.global_step, "epoch": trainer.current_epoch}
+        )
         return ckpt_name_metrics
 
     def _save_last_checkpoint(self, trainer, pl_module, ckpt_name_metrics):
-        should_save_last = True #We want to save!
-        #if not should_save_last:
+        should_save_last = True  # We want to save!
+        # if not should_save_last:
         #    return
 
         # when user ALSO asked for the 'last.ckpt' change the name
@@ -509,26 +514,33 @@ class ModelCheckpointLastOnly(Callback):
                 trainer.current_epoch,
                 trainer.global_step,
                 ckpt_name_metrics,
-                prefix=self.prefix
+                prefix=self.prefix,
             )
-            last_filepath = os.path.join(self.dirpath, f"{last_filepath}{self.FILE_EXTENSION}")
+            last_filepath = os.path.join(
+                self.dirpath, f"{last_filepath}{self.FILE_EXTENSION}"
+            )
         else:
             last_filepath = self._get_metric_interpolated_filepath_name(
-                ckpt_name_metrics, trainer.current_epoch, trainer.global_step, trainer,
+                ckpt_name_metrics,
+                trainer.current_epoch,
+                trainer.global_step,
+                trainer,
             )
 
         accelerator_backend = trainer.accelerator_backend
 
         if accelerator_backend is not None and accelerator_backend.rpc_enabled:
             # RPCPlugin manages saving all model states
-            accelerator_backend.ddp_plugin.rpc_save_model(self._save_model, last_filepath, trainer, pl_module)
+            accelerator_backend.ddp_plugin.rpc_save_model(
+                self._save_model, last_filepath, trainer, pl_module
+            )
         else:
             self._save_model(last_filepath, trainer, pl_module)
         if (
-                self.last_model_path
-                and self.last_model_path != last_filepath
-                and (self.save_top_k != -1 or self.save_last)
-                and trainer.is_global_zero
+            self.last_model_path
+            and self.last_model_path != last_filepath
+            and (self.save_top_k != -1 or self.save_last)
+            and trainer.is_global_zero
         ):
             self._del_model(self.last_model_path)
         self.last_model_path = last_filepath
@@ -545,10 +557,14 @@ class ModelCheckpointLastOnly(Callback):
             if isinstance(current, Metric):
                 current = current.compute()
             elif isinstance(current, numbers.Number):
-                current = torch.tensor(current, device=pl_module.device, dtype=torch.float)
+                current = torch.tensor(
+                    current, device=pl_module.device, dtype=torch.float
+                )
 
         if self.check_monitor_top_k(current):
-            self._update_best_and_save(current, epoch, step, trainer, pl_module, metrics)
+            self._update_best_and_save(
+                current, epoch, step, trainer, pl_module, metrics
+            )
         elif self.verbose:
             rank_zero_info(
                 f"Epoch {epoch:d}, step {step:d}: {self.monitor} was not in top {self.save_top_k}"
@@ -564,7 +580,7 @@ class ModelCheckpointLastOnly(Callback):
         step: int,
         trainer,
         pl_module,
-        ckpt_name_metrics
+        ckpt_name_metrics,
     ):
         k = len(self.best_k_models) + 1 if self.save_top_k == -1 else self.save_top_k
 
@@ -575,9 +591,11 @@ class ModelCheckpointLastOnly(Callback):
 
         # do not save nan, replace with +/- inf
         if torch.isnan(current):
-            current = torch.tensor(float('inf' if self.mode == "min" else '-inf'))
+            current = torch.tensor(float("inf" if self.mode == "min" else "-inf"))
 
-        filepath = self._get_metric_interpolated_filepath_name(ckpt_name_metrics, epoch, step, trainer, del_filepath)
+        filepath = self._get_metric_interpolated_filepath_name(
+            ckpt_name_metrics, epoch, step, trainer, del_filepath
+        )
 
         # save the current score
         self.current_score = current

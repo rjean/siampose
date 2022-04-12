@@ -29,7 +29,6 @@ crop_scale_max: 1.0
 crop_ratio_min: 0.75
 crop_ratio_max: 1.33
 crop_strategy: bbox
-sync_hflip: True 
+sync_hflip: True
 jitter_strength: 0.5
 loss_function: cyclic
-
