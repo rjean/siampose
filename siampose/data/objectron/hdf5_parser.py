@@ -46,7 +46,7 @@ class ObjectronHDF5SequenceParser(torch.utils.data.Dataset):
     ):
         self.hdf5_path = hdf5_path
         assert os.path.exists(self.hdf5_path), f"invalid dataset path: {self.hdf5_path}"
-        all_objects = selfsupmotion.data.objectron.sequence_parser.ObjectronSequenceParser.all_objects
+        all_objects = siampose.data.objectron.sequence_parser.ObjectronSequenceParser.all_objects
         if not seq_subset:
             self.objects = all_objects
         else:
@@ -130,7 +130,7 @@ class ObjectronHDF5FrameTupleParser(ObjectronHDF5SequenceParser):
     ):
         # also make a local var for the archive name, as we don't want to overwrite cache for each
         hdf5_name = os.path.basename(hdf5_path)  # yes, it's normal that this looks "unused" (it's used)
-        cache_hash = selfsupmotion.data.utils.get_params_hash(
+        cache_hash = siampose.data.utils.get_params_hash(
             {k: v for k, v in vars().items() if not k.startswith("_") and k != "self"})
         super().__init__(hdf5_path=hdf5_path, seq_subset=seq_subset)
         assert tuple_length >= 1 and frame_offset >= 1 and tuple_offset >= 1, "invalid tuple params"
@@ -402,7 +402,7 @@ class ObjectronHDF5FrameTupleParser(ObjectronHDF5SequenceParser):
             sample = self.transforms(sample)
         # resort after transforms so flips can be used
         if self.resort_keypoints:
-            sample["sorting_good"] = selfsupmotion.data.objectron.utils.sort_sample_keypoints(sample)
+            sample["sorting_good"] = siampose.data.objectron.utils.sort_sample_keypoints(sample)
         return sample
 
 class ObjectronFramePairDataModule(pytorch_lightning.LightningDataModule):
@@ -554,7 +554,7 @@ class ObjectronFramePairDataModule(pytorch_lightning.LightningDataModule):
         return torch.utils.data.DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
-            sampler=selfsupmotion.data.utils.ConstantRandomOrderSampler(self.val_dataset),
+            sampler=siampose.data.utils.ConstantRandomOrderSampler(self.val_dataset),
             shuffle=False,
             num_workers=self.num_workers,
             drop_last=self.drop_last,
@@ -562,7 +562,7 @@ class ObjectronFramePairDataModule(pytorch_lightning.LightningDataModule):
         )
 
     def train_transform(self):
-        return selfsupmotion.data.objectron.data_transforms.SimSiamFramePairTrainDataTransform(
+        return siampose.data.objectron.data_transforms.SimSiamFramePairTrainDataTransform(
             crop_height=self.crop_height,
             input_height=self.image_size,
             gaussian_blur=self.gaussian_blur,
@@ -576,7 +576,7 @@ class ObjectronFramePairDataModule(pytorch_lightning.LightningDataModule):
         )
 
     def val_transform(self):
-        return selfsupmotion.data.objectron.data_transforms.SimSiamFramePairEvalDataTransform(
+        return siampose.data.objectron.data_transforms.SimSiamFramePairEvalDataTransform(
             crop_height=self.crop_height,
             input_height=self.image_size,
             gaussian_blur=self.gaussian_blur,
@@ -603,9 +603,9 @@ if __name__ == "__main__":
     with open(config_path, "r") as stream:
         hyper_params = yaml.load(stream, Loader=yaml.FullLoader)
 
-    import selfsupmotion.utils.reproducibility_utils
+    import siampose.utils.reproducibility_utils
     hyper_params["seed"] = 0
-    selfsupmotion.utils.reproducibility_utils.set_seed(hyper_params["seed"])
+    siampose.utils.reproducibility_utils.set_seed(hyper_params["seed"])
 
     dm = ObjectronFramePairDataModule(
         hdf5_path=hdf5_path,

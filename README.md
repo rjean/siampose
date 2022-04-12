@@ -29,14 +29,14 @@ TODO: Add UCF-101 notebooks.
 ## Pre-training a model.
 Assuming you have the prepared HDF5 data in the /home/raphael/datasets/objectron folder, you can start pre-training with the following command:
 ``` 
-python simsiam/main.py --data=/home/raphael/datasets/objectron --output=output --config=examples/local/config-pretrain-8gb.yaml
+python siampose/main.py --data=~/datasets/objectron --output=output --config=configsconfig-pretrain-8gb.yaml
 ```
 During pre-training, the accuracy on category prediction is used as a proxy for the model quality.
 
 ## Evaluation on pose estimation.
 To evaluate on the zero-shot pose estimation task, you must first generate the embeddings using the main program.
 ```
-python simsiam/main.py    --data=/home/raphael/datasets/objectron \
+python siampose/main.py    --data=~/datasets/objectron \
                                 --output=output/pretrain_224 \
                                 --config=examples/local/config-pretrain-8gb.yaml
                                 --embeddings

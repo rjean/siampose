@@ -173,7 +173,7 @@ def run(args, data_dir, output_dir, hyper_params, mlf_logger, tbx_logger):
                 valid_split_ratio=1 #All the test is is used for validation!
             else: #Train/validation set.
                 data_dir = os.path.join(data_dir, "extract_s5_raw.hdf5")
-        dm = selfsupmotion.data.objectron.hdf5_parser.ObjectronFramePairDataModule(
+        dm = siampose.data.objectron.hdf5_parser.ObjectronFramePairDataModule(
             hdf5_path=data_dir,
             tuple_length=hyper_params.get("tuple_length"),
             frame_offset=hyper_params.get("frame_offset"),
@@ -198,7 +198,7 @@ def run(args, data_dir, output_dir, hyper_params, mlf_logger, tbx_logger):
         dm.setup()
 
     elif args.data_module=="file":
-        dm = selfsupmotion.data.objectron.file_datamodule.ObjectronFileDataModule(
+        dm = siampose.data.objectron.file_datamodule.ObjectronFileDataModule(
             num_workers=hyper_params["num_workers"],
             batch_size=hyper_params["batch_size"],
             pairing=hyper_params["pairing"],
@@ -208,10 +208,10 @@ def run(args, data_dir, output_dir, hyper_params, mlf_logger, tbx_logger):
    #se
     
     elif args.data_module=="ucf101":
-        from selfsupmotion.data.test.test_file import nop
+        from siampose.data.test.test_file import nop
         #from selfsupmotion.data.ucf101.test_file import nop
         #selfsupmotion.data.objectron
-        from selfsupmotion.data.ucf101.file_datamodule import UCF101FileDataModule
+        from siampose.data.ucf101.file_datamodule import UCF101FileDataModule
         dm = UCF101FileDataModule(
             data_dir=args.data,
             num_workers=hyper_params["num_workers"],

@@ -74,7 +74,7 @@ class SimSiamFramePairTrainDataTransform(object):
             if thelper_available:
                 crop = thelper.draw.safe_crop(image=frame, tl=tl, br=br)
             else:
-                crop = selfsupmotion.data.utils.safe_crop(image=frame, tl=tl, br=br)
+                crop = siampose.data.utils.safe_crop(image=frame, tl=tl, br=br)
             output_crop_seq.append(crop)
             if "POINTS" in sample:
                 offset_coords = (tl[0], tl[1], 0, 0)

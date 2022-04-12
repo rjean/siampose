@@ -8,7 +8,8 @@ import torch
 import pl_bolts
 import pytorch_lightning as pl
 import orion.client
-
+from siampose.checkpointing import ModelCheckpointLastOnly
+from pytorch_lightning import Callback
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def train(**kwargs):  # pragma: no cover
         # note the minus - cause orion is always trying to minimize (cit. from the guide)
         value=-float(best_dev_metric))])
 
-from pytorch_lightning import Callback
+
 
 def load_mlflow(output):
     """Load the mlflow run id.
@@ -101,7 +102,7 @@ def train_impl(
             mode="auto",
         )
         callbacks.extend([early_stopping, best_checkpoint_callback])
-    from selfsupmotion.checkpointing import ModelCheckpointLastOnly
+    
     callbacks.extend([
         pl_bolts.callbacks.PrintTableMetricsCallback(),
         ModelCheckpointLastOnly(
