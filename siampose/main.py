@@ -121,12 +121,14 @@ def main():
         data_dir = args.data
         output_dir = args.output
 
+    data_dir = os.path.expanduser(data_dir)
+
     # to intercept any print statement:
     sys.stdout = LoggerWriter(logger.info)
     sys.stderr = LoggerWriter(logger.warning)
 
     assert args.config is not None
-    with open(args.config, "r") as stream:
+    with open(os.path.expanduser(args.config), "r") as stream:
         hyper_params = load(stream, Loader=yaml.FullLoader)
     exp_name = hyper_params["exp_name"]
     output_dir = os.path.join(output_dir, exp_name)

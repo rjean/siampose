@@ -29,7 +29,7 @@ TODO: Add UCF-101 notebooks.
 ## Pre-training a model.
 Assuming you have the prepared HDF5 data in the /home/raphael/datasets/objectron folder, you can start pre-training with the following command:
 ```
-python siampose/main.py --data=~/datasets/objectron --output=output --config=configsconfig-pretrain-8gb.yaml
+python siampose/main.py --data=~/datasets/objectron --output=output --config=configs/config-pretrain-8gb.yaml
 ```
 During pre-training, the accuracy on category prediction is used as a proxy for the model quality.
 
