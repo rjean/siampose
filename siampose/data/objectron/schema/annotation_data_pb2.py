@@ -12,8 +12,8 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import selfsupmotion.data.objectron.schema.a_r_capture_metadata_pb2 as a__r__capture__metadata__pb2
-import selfsupmotion.data.objectron.schema.object_pb2 as object__pb2
+import siampose.data.objectron.schema.a_r_capture_metadata_pb2 as a__r__capture__metadata__pb2
+import siampose.data.objectron.schema.object_pb2 as object__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(

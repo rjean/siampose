@@ -3,7 +3,7 @@
 import numpy as np
 import scipy.spatial as sp
 
-import selfsupmotion.data.objectron.dataset.box as Box
+import siampose.data.objectron.dataset.box as Box
 
 _PLANE_THICKNESS_EPSILON = 0.000001
 _POINT_IN_FRONT_OF_PLANE = 1
