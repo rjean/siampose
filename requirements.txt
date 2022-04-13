@@ -1,5 +1,5 @@
-torch==1.7
-pytorch-lightning==1.1.1
+torch==1.8.1
+pytorch-lightning==1.1.5
 opencv-python
 mlflow
 open3d
@@ -7,7 +7,7 @@ h5py
 albumentations
 lightning-bolts==0.3.4
 orion
-torchvision==0.8.0
+torchvision==0.9.1
 frozendict
 tensorflow # For objectron protobuf
 natsort
