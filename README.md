@@ -16,7 +16,7 @@ Two dataloaders are provided for Objectron, one which is "file-based" and is use
 ### HDF5 preprocessing
 For the HDF5 dataloader expects a pre-processed HDF5 file, which contains the full frame images and annotations in the same package.
 
-TODO: Add HDF5 generation notebook.
+To generate the required HDF5 file, you need to have downloaded the Objectron TFRecords dataset, and use the [`simpose/data/objectron/hdf5_extractor.py` script](./siampose/data/objectron/hdf5_extractor.py).
 
 ### File-based preprocessing
 For the file-based dataloader, bounding box crops are taken for each object instance in the Objectron raw video sequences. The "raw" objectron annotations are used directly, without further processing. This dataloader allow reducing the orignal 2Tb dataset to a more tractable 2Gb dataset for quick experiment cycles.
