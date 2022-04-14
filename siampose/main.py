@@ -5,6 +5,7 @@ import logging
 import os
 import shutil
 import sys
+from typing import OrderedDict
 from torch.nn.modules.linear import Identity
 from traitlets.traitlets import default
 import yaml
@@ -306,7 +307,10 @@ def run(args, data_dir, output_dir, hyper_params, mlf_logger, tbx_logger):
         if "SPECIAL:" not in args.embeddings_ckpt:
             ckpt = torch.load(args.embeddings_ckpt)
             print(f"Loading from weights from {args.embeddings_ckpt}")
-            model.load_state_dict(ckpt["state_dict"])
+            if isinstance(ckpt, OrderedDict):  # Assume a state_dict
+                model.load_state_dict(ckpt)
+            else:
+                model.load_state_dict(ckpt["state_dict"])
         elif args.embeddings_ckpt == "SPECIAL:IMAGENET":
             model.online_network.encoder = torch.hub.load(
                 "pytorch/vision:v0.6.0", "resnet50", pretrained=True
@@ -431,9 +435,9 @@ def generate_embeddings(
             else:
                 # Were doing resnet-50 evaluation here!
                 features = model.online_network.encoder(images1)
-                assert features.shape[1] == 2048
+            assert features.shape[1] == 2048
 
-                # features=encoder(images)[0]
+            # features=encoder(images)[0]
             features = F.normalize(features, dim=1)
             all_features[:, base : base + len(images1)] = features.t().cpu()
             # train_labels[base:base+len(images)]=labels
