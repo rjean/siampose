@@ -2,55 +2,27 @@
 # (note: if a sequence contains two objects, only the first will be kept/exported)
 # (note2: by default, only one of every X frames will be exported, with X=5 by default)
 
+import argparse
+import typing
+
 import h5py
 
-from selfsupmotion.data.objectron.sequence_parser import *
-from selfsupmotion.data.utils import *
+from siampose.data.objectron.sequence_parser import *
+from siampose.data.utils import *
 
 
-if __name__ == "__main__":
-    data_path = "/wdata/datasets/objectron/"
-
+def hdf5_extraction(
+    data_path: typing.AnyStr,
+    hdf5_output_path: typing.AnyStr,
+    objectron_subset: typing.AnyStr,
+    target_subsampl_rate: int,
+    data_fields_to_export: typing.List[typing.AnyStr],
+    attr_fields_to_export: typing.List[typing.AnyStr],
+):
+    """Parses, extracts, and repackages a subset of the Objectron data into an HDF5 file."""
     # each object+sequence will be contained in its own group (under the name 'objtype/seqid')
     # all attributes will be encoded into separate datasets indexable by frame index
     # ... frame jumps might not be exactly 5-frame-apart (e.g. when blurred frames are skipped)
-
-    # these fields will be encoded into datasets
-    data_fields_to_export = [
-        "IMAGE",
-        "IMAGE_ID",
-        "TIMESTAMP_MCSEC",
-        "POINT_2D",
-        "POINT_3D",
-        "VIEW_MATRIX",
-        # for some terrible reason the projection+intrinsic matrices change between frames???
-        "PROJECTION_MATRIX",
-        "INTRINSIC_MATRIX",
-        "EXTRINSIC_MATRIX",
-        "OBJECT_TRANSLATION",
-        "OBJECT_ORIENTATION",
-        "OBJECT_SCALE",
-        "VISIBILITY",
-        "PLANE_CENTER",
-        "PLANE_NORMAL",
-        # these two are non-standard:
-        "BBOX_2D_IM",
-        "CENTROID_2D_IM",
-    ]
-
-    # these fields will be encoded into group attributes
-    attr_fields_to_export = [
-        "IMAGE_WIDTH",
-        "IMAGE_HEIGHT",
-        "ORIENTATION",
-    ]
-
-    objectron_subset = "test"  # in ["train", "test"]
-    target_subsampl_rate = 5  # jump and extract one out of every 5 frames
-    hdf5_output_path = (
-        data_path + f"extract_s{target_subsampl_rate}_raw_{objectron_subset}.hdf5.tmp"
-    )
-
     with h5py.File(hdf5_output_path, "w") as fd:
         fd.attrs["target_subsampl_rate"] = target_subsampl_rate
         fd.attrs["objectron_subset"] = objectron_subset
@@ -203,8 +175,82 @@ if __name__ == "__main__":
                         print(f"EXCEPTION CAUGHT FOR {seq_name}:\n{str(e)}")
                         continue
             except Exception as e:
-                print(
-                    f"EXCEPTION CAUGHT FOR {object} at seq_idx = {seq_idx}:\n{str(e)}"
-                )
+                print(f"EXCEPTION CAUGHT FOR {object} at seq_idx = {seq_idx}:\n{str(e)}")
                 continue
-    print("all done")
+
+
+def main():
+    """Entrypoint for objectron data extraction and HDF5 packaging."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data-path",
+        help="Path to the raw Objectron dataset (in TFRecords format)",
+        required=True,
+    )
+    parser.add_argument(
+        "--hdf5-output-path",
+        help="Path to the location where the output HDF5 archive should be written",
+        required=True,
+    )
+    parser.add_argument(
+        "--objectron-subset",
+        help="Name of the objectron data subset to extract and repackage (train/test)",
+        default="train",
+    )
+    parser.add_argument(
+        "--target-subsampl-rate",
+        help="Frame subsampling rate to use when extracting the objectron video data",
+        type=int,
+        default=5,  # jump and extract one out of every 5 frames
+    )
+    default_data_fields_to_export = [  # these fields will be encoded into datasets
+        "IMAGE",
+        "IMAGE_ID",
+        "TIMESTAMP_MCSEC",
+        "POINT_2D",
+        "POINT_3D",
+        "VIEW_MATRIX",
+        # for some terrible reason the projection+intrinsic matrices change between frames???
+        "PROJECTION_MATRIX",
+        "INTRINSIC_MATRIX",
+        "EXTRINSIC_MATRIX",
+        "OBJECT_TRANSLATION",
+        "OBJECT_ORIENTATION",
+        "OBJECT_SCALE",
+        "VISIBILITY",
+        "PLANE_CENTER",
+        "PLANE_NORMAL",
+        # these two are non-standard:
+        "BBOX_2D_IM",
+        "CENTROID_2D_IM",
+    ]
+    parser.add_argument(
+        "--data-fields-to-export",
+        help="List of data field names that should be exported in the HDF5 file",
+        default=default_data_fields_to_export,
+    )
+    default_attr_fields_to_export = [  # these fields will be encoded into group attributes
+        "IMAGE_WIDTH",
+        "IMAGE_HEIGHT",
+        "ORIENTATION",
+    ]
+    parser.add_argument(
+        "--attr-fields-to-export",
+        help="List of attribute field names that should be exported in the HDF5 file",
+        default=default_attr_fields_to_export,
+    )
+
+    args = parser.parse_args()
+
+    return hdf5_extraction(
+        data_path=args.data_path,
+        hdf5_output_path=args.hdf5_output_path,
+        objectron_subset=args.objectron_subset,
+        target_subsampl_rate=args.target_subsampl_rate,
+        data_fields_to_export=args.data_fields_to_export,
+        attr_fields_to_export=args.attr_fields_to_export,
+    )
+
+
+if __name__ == "__main__":
+    main()
