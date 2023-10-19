@@ -628,9 +628,9 @@ class ObjectronFramePairDataModule(pytorch_lightning.LightningDataModule):
         self.val_dataset = None
 
     def setup(self, stage=None):
-        if self.val_transforms is None:
+        if "val_transforms" not in self.__dict__:  # only setup once
             self.val_transforms = self.val_transform()
-        if self.train_transforms is None:
+        if "train_transforms" not in self.__dict__:  # only setup once
             self.train_transforms = self.train_transform()
         target_fields = [
             "IMAGE",

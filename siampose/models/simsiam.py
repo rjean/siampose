@@ -5,7 +5,6 @@ import typing
 import numpy as np
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.utilities import AMPType
 from torch.nn.modules.linear import Identity
 from torch.optim.optimizer import Optimizer
 
@@ -815,8 +814,8 @@ class SimSiam(pl.LightningModule):
         #    optimizer_closure()
         #    self.trainer.scaler.step(optimizer)
         if ((batch_idx + 1) % self.accumulate_grad_batches_custom) == 0:
-            if self.trainer.amp_backend == AMPType.APEX:
-                optimizer_closure()
-                optimizer.step()
-            else:
+            #if self.trainer.amp_backend == AMPType.APEX:
+            #    optimizer_closure()
+            #    optimizer.step()
+            #else:
                 optimizer.step(closure=optimizer_closure)

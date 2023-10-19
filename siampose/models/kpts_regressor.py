@@ -9,7 +9,6 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional
-from pytorch_lightning.utilities import AMPType
 from torch.optim.optimizer import Optimizer
 
 from pl_bolts.models.self_supervised.resnets import resnet18, resnet50
@@ -333,7 +332,7 @@ class KeypointsRegressor(pl.LightningModule):
         else:
             for param_group in optimizer.param_groups:
                 param_group["lr"] = new_learning_rate
-        if self.trainer.amp_backend == AMPType.APEX:
+        if self.trainer.amp_backend == "apex":
             optimizer_closure()
             optimizer.step()
         else:

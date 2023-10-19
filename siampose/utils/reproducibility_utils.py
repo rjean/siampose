@@ -10,6 +10,8 @@ def set_seed(
 
     :param seed: (int) the seed
     """
+    if not isinstance(seed, int):
+        seed = None # will select seed randomly
     pytorch_lightning.seed_everything(seed)
     # the four setters below are included in 'seed_everything' above
     # random.seed(seed)

@@ -14,17 +14,26 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 import torch
 import yaml
-
-from pytorch_lightning.callbacks.base import Callback
-from pytorch_lightning.metrics.metric import Metric
+from pytorch_lightning import Callback
+#from pytorch_lightning.callbacks.base import Callback
+from torchmetrics import Metric
 from pytorch_lightning.utilities import rank_zero_info, rank_zero_only, rank_zero_warn
 from pytorch_lightning.utilities.cloud_io import get_filesystem
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
 log = logging.getLogger(__name__)
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 
-class ModelCheckpointLastOnly(Callback):
+checkpoint_callback = ModelCheckpoint(
+    dirpath='./checkpoints',  # Specify the directory to save checkpoints
+    filename='model-{epoch:02d}-{val_loss:.2f}',  # Customize the checkpoint filename
+    monitor='val_loss',  # Choose the metric to monitor for checkpointing
+    save_top_k=1,  # Save only the best model based on the monitored metric
+    mode='min'  # 'min' or 'max' depending on whether lower or higher values are better
+)
+
+class ModelCheckpointLastOnly(ModelCheckpoint):
     r"""
     Save the model after every epoch by monitoring a quantity.
     After training finishes, use :attr:`best_model_path` to retrieve the path to the
@@ -115,7 +124,7 @@ class ModelCheckpointLastOnly(Callback):
         save_last: Optional[bool] = None,
         save_top_k: Optional[int] = None,
         save_weights_only: bool = False,
-        mode: str = "auto",
+        mode: str = "min",
         period: int = 1,
         prefix: str = "",
         dirpath: Optional[Union[str, Path]] = None,
@@ -153,31 +162,35 @@ class ModelCheckpointLastOnly(Callback):
         self.__init_ckpt_dir(filepath, dirpath, filename, save_top_k)
         self.__validate_init_configuration()
 
-    def on_pretrain_routine_start(self, trainer, pl_module):
+    def on_fit_start(self, trainer, pl_module):
         """
         When pretrain routine starts we build the ckpt dir on the fly
         """
         self.__resolve_ckpt_dir(trainer)
         self.save_function = trainer.save_checkpoint
 
-    def on_epoch_end(self, trainer, pl_module):
+    def on_validation_epoch_end(self, trainer, pl_module):
         """
         checkpoints can be saved at the end of the val loop
         """
         self.save_checkpoint(trainer, pl_module)
 
-    def on_save_checkpoint(self, trainer, pl_module) -> Dict[str, Any]:
-        return {
-            "monitor": self.monitor,
-            "best_model_score": self.best_model_score,
-            "best_model_path": self.best_model_path,
-            "current_score": self.current_score,
-            "dirpath": self.dirpath,
-        }
 
     def on_load_checkpoint(self, checkpointed_state: Dict[str, Any]):
         self.best_model_score = checkpointed_state["best_model_score"]
         self.best_model_path = checkpointed_state["best_model_path"]
+
+
+    #def _save_checkpoint(self, trainer: "pl.Trainer", filepath: str) -> None:
+    #    trainer.save_checkpoint(filepath, self.save_weights_only)
+#
+    #    self._last_global_step_saved = trainer.global_step
+#
+    #    # notify loggers
+    #    if trainer.is_global_zero:
+    #        for logger in trainer.loggers:
+    #            logger.after_save_checkpoint(proxy(self))
+
 
     def save_checkpoint(self, trainer, pl_module):
         """
@@ -198,8 +211,8 @@ class ModelCheckpointLastOnly(Callback):
         # ):
         #    return
 
-        self._add_backward_monitor_support(trainer)
-        self._validate_monitor_key(trainer)
+        #self._add_backward_monitor_support(trainer)
+        #self._validate_monitor_key(trainer)
 
         # track epoch when ckpt was last checked
         self._last_global_step_saved = global_step
@@ -314,7 +327,7 @@ class ModelCheckpointLastOnly(Callback):
 
     def _save_model(self, filepath: str, trainer, pl_module):
         # in debugging, track when we save checkpoints
-        trainer.dev_debugger.track_checkpointing_history(filepath)
+        # trainer.dev_debugger.track_checkpointing_history(filepath)
 
         # make paths
         if trainer.is_global_zero:
@@ -449,18 +462,18 @@ class ModelCheckpointLastOnly(Callback):
         if not trainer.fast_dev_run and trainer.is_global_zero:
             self._fs.makedirs(self.dirpath, exist_ok=True)
 
-    def _add_backward_monitor_support(self, trainer):
-        metrics = trainer.logger_connector.callback_metrics
-
-        # backward compatibility... need to deprecate
-        if self.monitor is None and "val_loss" in metrics:
-            self.monitor = "val_loss"
-
-        if self.monitor is None and "checkpoint_on" in metrics:
-            self.monitor = "checkpoint_on"
-
-        if self.save_top_k is None and self.monitor is not None:
-            self.save_top_k = 1
+    #def _add_backward_monitor_support(self, trainer):
+    #    metrics = trainer.logger_connector.callback_metrics
+#
+    #    # backward compatibility... need to deprecate
+    #    if self.monitor is None and "val_loss" in metrics:
+    #        self.monitor = "val_loss"
+#
+    #    if self.monitor is None and "checkpoint_on" in metrics:
+    #        self.monitor = "checkpoint_on"
+#
+    #    if self.save_top_k is None and self.monitor is not None:
+    #        self.save_top_k = 1
 
     def _validate_monitor_key(self, trainer):
         metrics = trainer.logger_connector.callback_metrics
@@ -494,9 +507,9 @@ class ModelCheckpointLastOnly(Callback):
         return filepath
 
     def _monitor_candidates(self, trainer):
-        ckpt_name_metrics = deepcopy(trainer.logger_connector.logged_metrics)
-        ckpt_name_metrics.update(trainer.logger_connector.callback_metrics)
-        ckpt_name_metrics.update(trainer.logger_connector.progress_bar_metrics)
+        ckpt_name_metrics = deepcopy(trainer.logged_metrics)
+        ckpt_name_metrics.update(trainer.callback_metrics)
+        ckpt_name_metrics.update(trainer.progress_bar_metrics)
         ckpt_name_metrics.update(
             {"step": trainer.global_step, "epoch": trainer.current_epoch}
         )
@@ -527,15 +540,15 @@ class ModelCheckpointLastOnly(Callback):
                 trainer,
             )
 
-        accelerator_backend = trainer.accelerator_backend
+       # accelerator_backend = trainer.accelerator_backend
 
-        if accelerator_backend is not None and accelerator_backend.rpc_enabled:
-            # RPCPlugin manages saving all model states
-            accelerator_backend.ddp_plugin.rpc_save_model(
-                self._save_model, last_filepath, trainer, pl_module
-            )
-        else:
-            self._save_model(last_filepath, trainer, pl_module)
+        #if accelerator_backend is not None and accelerator_backend.rpc_enabled:
+        #    # RPCPlugin manages saving all model states
+        #    accelerator_backend.ddp_plugin.rpc_save_model(
+        #        self._save_model, last_filepath, trainer, pl_module
+        #    )
+        #else:
+        self._save_model(last_filepath, trainer, pl_module)
         if (
             self.last_model_path
             and self.last_model_path != last_filepath
@@ -640,6 +653,6 @@ class ModelCheckpointLastOnly(Callback):
         the internal state to diverge between ranks.
         """
         exists = self._fs.exists(filepath)
-        if trainer.accelerator_backend is not None:
-            exists = trainer.accelerator_backend.broadcast(exists)
+        #if trainer.accelerator_backend is not None:
+        #    exists = trainer.accelerator_backend.broadcast(exists)
         return exists

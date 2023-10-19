@@ -128,14 +128,14 @@ def train_impl(
     trainer = pl.Trainer(
         # @@@@@@@@@@@ TODO check if we can add an online evaluator w/ callback
         callbacks=callbacks,
-        checkpoint_callback=True,
+        #checkpoint_callback=True,
         logger=[mlf_logger, tbx_logger],
         max_epochs=hyper_params["max_epoch"],
         resume_from_checkpoint=resume_from_checkpoint,
         gpus=torch.cuda.device_count(),
         auto_select_gpus=True,
         precision=hyper_params["precision"],
-        amp_level="O1",
+        #amp_level="O1",
         accelerator=None,
         accumulate_grad_batches=hyper_params.get("accumulate_grad_batches", 1),
     )
